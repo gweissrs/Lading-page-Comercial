@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --color-accent:      #C1121F;
+  --color-accent-dark: #A30F1A;
+  --color-carbon:      #1A1A1A;
+  --color-offwhite:    #FAFAF8;
+  --color-salmon:      #F3A79C;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@layer utilities {
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-fade    { animation: fadeSlideIn 0.8s ease-out forwards; opacity: 0; }
+    .hero-delay-1 { animation-delay: 0.1s; }
+    .hero-delay-2 { animation-delay: 0.2s; }
+    .hero-delay-3 { animation-delay: 0.3s; }
+    .hero-delay-4 { animation-delay: 0.4s; }
+    .hero-delay-6 { animation-delay: 0.6s; }
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  body {
+    background-color: var(--color-offwhite);
+    color: var(--color-carbon);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    overflow-x: hidden;
+    /* Safe area padding para bottom em iPhones com home indicator */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  #root { width: 100%; }
+  * { box-sizing: border-box; }
+}
