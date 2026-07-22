@@ -31,7 +31,7 @@ export default function Footer() {
                 className="inline-flex items-center gap-2 text-white/55 hover:text-white/80 text-sm transition-colors py-2.5 min-h-[44px]"
               >
                 <WhatsAppIcon />
-                (48) 98832-9769
+                (48) 9817-3153
               </a>
               <a
                 href="https://www.instagram.com/william.consorcios.consultor"

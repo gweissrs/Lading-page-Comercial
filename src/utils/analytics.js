@@ -27,7 +27,7 @@ export function trackFaqOpen(index, question) {
   window.gtag('event', 'faq_open', { question_index: index, question_text: question })
 }
 
-const _WA_BASE = 'https://wa.me/5548988329769'
+const _WA_BASE = 'https://wa.me/554898173153'
 const _defaultText = 'Olá, William! Vim pelo site e gostaria de conversar sobre consórcio.'
 
 const _messages = {
