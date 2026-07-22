@@ -1,7 +1,7 @@
 // Baseado em: https://ui.aceternity.com/components/timeline
 // Adaptado: TypeScript→JSX, motion/react→framer-motion, dark: classes→paleta fixa, dados reais William Weiss
 
-import { useScroll, useTransform, motion, useMotionValueEvent } from "framer-motion";
+import { motion, useMotionValue, useMotionValueEvent } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { trackWhatsApp, waUrl } from '../utils/analytics';
 import { useSectionTracking } from '../utils/useSectionTracking';
@@ -65,15 +65,13 @@ const timelineData = [
   },
 ];
 
-function TimelineItem({ item, heightTransform, innerRef }) {
+function TimelineItem({ item, lineHeight, innerRef }) {
   const dotRef = useRef(null);
   const [isActive, setIsActive] = useState(false);
   const dotOffsetRef = useRef(null);
 
   // Pré-computa o offset do dot em relação ao topo de innerRef no mount,
-  // antes de qualquer sticky entrar em jogo. Evita que o offset cresça
-  // com scrollY quando o elemento está fixado (sticky), o que causaria
-  // desativação falsa dos pontos ao rolar para baixo.
+  // antes de qualquer sticky entrar em jogo.
   useEffect(() => {
     if (!dotRef.current || !innerRef.current) return;
     const containerTop = innerRef.current.getBoundingClientRect().top + window.scrollY;
@@ -81,9 +79,9 @@ function TimelineItem({ item, heightTransform, innerRef }) {
     dotOffsetRef.current = dotTop - containerTop + 20;
   }, [innerRef]);
 
-  useMotionValueEvent(heightTransform, "change", (lineHeight) => {
+  useMotionValueEvent(lineHeight, "change", (h) => {
     if (dotOffsetRef.current === null) return;
-    setIsActive(lineHeight >= dotOffsetRef.current);
+    setIsActive(h >= dotOffsetRef.current);
   });
 
   return (
@@ -127,25 +125,39 @@ function TimelineItem({ item, heightTransform, innerRef }) {
 
 function Timeline({ data }) {
   const innerRef = useRef(null);
-  const containerRef = useRef(null);
-  const [height, setHeight] = useState(0);
+  const lineHeight = useMotionValue(0);
+  const lineOpacity = useMotionValue(0);
 
   useEffect(() => {
-    if (innerRef.current) {
-      setHeight(innerRef.current.getBoundingClientRect().height);
-    }
-  }, [innerRef]);
+    const onScroll = () => {
+      const el = innerRef.current;
+      if (!el) return;
 
-  const { scrollYProgress } = useScroll({
-    target: innerRef,
-    offset: ["start 10%", "end 50%"],
-  });
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const containerH = el.offsetHeight;
 
-  const heightTransform = useTransform(scrollYProgress, [0, 1], [0, height]);
-  const opacityTransform = useTransform(scrollYProgress, [0, 0.1], [0, 1]);
+      if (containerH === 0) return;
+
+      // progress 0→1:
+      //   0 = container top at viewport center (rect.top = vh*0.5)
+      //   1 = container bottom at viewport center (rect.bottom = vh*0.5)
+      // denominator = containerH → tracking 1:1 com o scroll, sem delay inicial
+      const progress = Math.max(0, Math.min(1,
+        (vh * 0.5 - rect.top) / containerH
+      ));
+
+      lineHeight.set(progress * containerH);
+      lineOpacity.set(Math.min(1, progress * 5));
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll(); // evaluate immediately on mount
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [lineHeight, lineOpacity]);
 
   return (
-    <div className="w-full bg-offwhite font-sans md:px-10" ref={containerRef}>
+    <div className="w-full bg-offwhite font-sans md:px-10">
       <div className="max-w-7xl mx-auto py-20 px-4 md:px-8 lg:px-10">
         <span className="text-xs font-semibold uppercase tracking-widest text-accent mb-3 block">
           Trajetória
@@ -160,20 +172,20 @@ function Timeline({ data }) {
           <TimelineItem
             key={index}
             item={item}
-            heightTransform={heightTransform}
+            lineHeight={lineHeight}
             innerRef={innerRef}
           />
         ))}
 
-        <div
-          style={{ height: height + "px" }}
-          className="absolute md:left-8 left-8 top-0 overflow-hidden w-[2px] bg-[linear-gradient(to_bottom,var(--tw-gradient-stops))] from-transparent from-[0%] via-carbon/15 to-transparent to-[99%] [mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]"
+        <motion.div
+          style={{ opacity: lineOpacity }}
+          className="absolute md:left-8 left-8 top-0 h-full overflow-hidden w-[2px] bg-[linear-gradient(to_bottom,var(--tw-gradient-stops))] from-transparent from-[0%] via-carbon/15 to-transparent to-[99%] [mask-image:linear-gradient(to_bottom,transparent_0%,black_10%,black_90%,transparent_100%)]"
         >
           <motion.div
-            style={{ height: heightTransform, opacity: opacityTransform }}
+            style={{ height: lineHeight }}
             className="absolute inset-x-0 top-0 w-[2px] bg-gradient-to-t from-accent via-accent/40 to-transparent from-[0%] via-[10%] rounded-full"
           />
-        </div>
+        </motion.div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-10 pt-20 pb-20">
